@@ -409,3 +409,4 @@ Stat.API.xml
 StaticFiles
 *.7z
 dat
+*.zip
