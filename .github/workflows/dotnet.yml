@@ -27,5 +27,5 @@ jobs:
       run: dotnet publish -c Release -r win-x64 -p:PublishSingleFile=true -p:PublishTrimmed=true -p:IncludeNativeLibrariesForSelfExtract=true -p:PublishReadyToRun=true -p:PublishReadyToRunComposite=true -o publish
     - uses: actions/upload-artifact@v2
       with:
-        name: publish
-        path: publish/
+        name: MeridianDownload.exe
+        path: publish/MeridianDownload.exe
