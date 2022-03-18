@@ -9,17 +9,29 @@ const string baseUrl = "https://data.meridianproject.ac.cn";
 
 Console.WriteLine("Enter cookie value");
 string? cookie = "session=" + Console.ReadLine();
-string fileId = "87";
+Console.WriteLine("Enter file id");
+string fileId = Console.ReadLine();
 FileInfo fileDictPath = new($"{fileId}-files.json");
 var fileDict = fileDictPath.Exists ? JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(fileDictPath.FullName)) ?? new() : await FetchFileList(fileId);
 await DownloadFiles(fileDict);
 
 async Task<Dictionary<string, string>> FetchFileList(string fileId)
 {
-    Dictionary<string, string> fileDict = new();
-    for (int i = 0; i < 29; i++)
+    string html = await GetPageHTML(fileId, 1);
+    int pos = html.IndexOf("总页数");
+    string totalPages = string.Empty;
+    if (pos != -1) 
+        totalPages = html.Substring(pos + 4, 2);
+    else
     {
-        string html = await GetPageHTML(fileId, i + 1);
+        pos = html.IndexOf("Total Pages");
+        totalPages = html.Substring(pos + 12, 2);
+    }
+    int pages = Convert.ToInt32(totalPages);
+    Dictionary<string, string> fileDict = new();
+    for (int i = 0; i < pages; i++)
+    {
+        html = await GetPageHTML(fileId, i + 1);
         ExtractFiles(html, fileId, fileDict);
     }
     string json = JsonSerializer.Serialize(fileDict);
