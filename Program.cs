@@ -10,11 +10,11 @@ const string baseUrl = "https://data.meridianproject.ac.cn";
 Console.WriteLine("Enter cookie value");
 string? cookie = "session=" + Console.ReadLine();
 string fileId = "87";
-var fileDict = await FetchFiles(fileId);
-// Dictionary<string, string> fileDict = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText($"{fileId}-files.json")) ?? new();
+FileInfo fileDictPath = new($"{fileId}-files.json");
+var fileDict = fileDictPath.Exists ? JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(fileDictPath.FullName)) ?? new() : await FetchFileList(fileId);
 await DownloadFiles(fileDict);
 
-async Task<Dictionary<string, string>> FetchFiles(string fileId)
+async Task<Dictionary<string, string>> FetchFileList(string fileId)
 {
     Dictionary<string, string> fileDict = new();
     for (int i = 0; i < 29; i++)
@@ -23,7 +23,7 @@ async Task<Dictionary<string, string>> FetchFiles(string fileId)
         ExtractFiles(html, fileId, fileDict);
     }
     string json = JsonSerializer.Serialize(fileDict);
-    File.WriteAllText($"{fileId}-files.json", json);
+    File.WriteAllText(fileDictPath.FullName, json);
     return fileDict;
 }
 
