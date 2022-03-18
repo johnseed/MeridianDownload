@@ -5,31 +5,36 @@ using HtmlAgilityPack;
 
 const string baseUrl = "https://data.meridianproject.ac.cn";
 
-// const string cookie = "session=d104785a-8002-480f-948e-7395c75c8a86";
-// await FetchFiles("205");
+// const string cookie = "session=xxx";
 
 Console.WriteLine("Enter cookie value");
 string? cookie = "session=" + Console.ReadLine();
-Dictionary<string, string> fileDict = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText("files.json")) ?? new();
+string fileId = "87";
+var fileDict = await FetchFiles(fileId);
+// Dictionary<string, string> fileDict = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText($"{fileId}-files.json")) ?? new();
 await DownloadFiles(fileDict);
 
-async Task FetchFiles(string fileId)
+async Task<Dictionary<string, string>> FetchFiles(string fileId)
 {
     Dictionary<string, string> fileDict = new();
-    for (int i = 0; i < 26; i++)
+    for (int i = 0; i < 29; i++)
     {
-        string html = await GetPageHTML(i + 1);
+        string html = await GetPageHTML(fileId, i + 1);
         ExtractFiles(html, fileId, fileDict);
     }
     string json = JsonSerializer.Serialize(fileDict);
     File.WriteAllText($"{fileId}-files.json", json);
+    return fileDict;
 }
 
-async Task<string> GetPageHTML(int page = 1)
+async Task<string> GetPageHTML(string fileId, int page = 1)
 {
     using HttpClient client = new();
+    string endTime = DateTime.Now.ToString("yyyyMMddHHmmss");
+
     // string url = $"https://data.meridianproject.ac.cn/science-data/download-list/?file_type=file&ift_id=130&datetime1=20120101000000&datetime2=20211222235959&page_num={page}";
-    string url = $"https://data.meridianproject.ac.cn/science-data/download-list/?file_type=file&ift_id=205&datetime1=20100101000000&datetime2=20211223235959&page_num={page}";
+    // string url = $"https://data.meridianproject.ac.cn/science-data/download-list/?file_type=file&ift_id=205&datetime1=20100101000000&datetime2=20211223235959&page_num={page}";
+    string url = $"https://data.meridianproject.ac.cn/science-data/download-list/?file_type=file&ift_id={fileId}&datetime1=20100101000000&datetime2={endTime}&page_num={page}";
     var message = new HttpRequestMessage(HttpMethod.Get, url);
     message.Headers.Add("Cookie", cookie);
     var response = client.Send(message);
