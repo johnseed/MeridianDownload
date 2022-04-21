@@ -87,7 +87,7 @@ async Task DownloadFiles(Dictionary<string, string> fileDict)
         if (file.Exists)
         {
             string content = File.ReadAllText(file.FullName);
-            if (string.IsNullOrWhiteSpace(content) || content.Contains("nginx"))
+            if (string.IsNullOrWhiteSpace(content) || content.Contains("nginx") || content.Contains("html"))
             {
                 Console.BackgroundColor = ConsoleColor.Red;
                 Console.WriteLine($"{kv.Key} is broken");
