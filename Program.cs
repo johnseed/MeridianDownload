@@ -79,32 +79,44 @@ async Task DownloadFiles(Dictionary<string, string> fileDict)
     // string json = File.ReadAllText("MST-low-2010-2011.json");
     // var fileDict = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
     DirectoryInfo datDir = new("dat");
+    Queue<KeyValuePair<string,string>> fileQueue = new(fileDict);
+    
     if (!datDir.Exists) datDir.Create();
-    foreach (var kv in fileDict)
+    // foreach (var kv in fileDict)
+    while(fileQueue.Count > 0)
     {
-        // string fileName = line.Replace("https://data.meridianproject.ac.cn/science-data/download/?file_type=file&sf_id=", string.Empty);
-        FileInfo file = new(Path.Combine(datDir.FullName, kv.Key));
-        if (file.Exists)
+        var kv = fileQueue.Dequeue();
+        try
         {
-            string content = File.ReadAllText(file.FullName);
-            if (string.IsNullOrWhiteSpace(content) || content.Contains("nginx") || content.Contains("html"))
+            // string fileName = line.Replace("https://data.meridianproject.ac.cn/science-data/download/?file_type=file&sf_id=", string.Empty);
+            FileInfo file = new(Path.Combine(datDir.FullName, kv.Key));
+            if (file.Exists)
             {
-                Console.BackgroundColor = ConsoleColor.Red;
-                Console.WriteLine($"{kv.Key} is broken");
-                Console.ResetColor();
+                string content = File.ReadAllText(file.FullName);
+                if (string.IsNullOrWhiteSpace(content) || content.Contains("nginx") || content.Contains("html"))
+                {
+                    Console.BackgroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"{kv.Key} is broken");
+                    Console.ResetColor();
+                }
+                else
+                {
+                    // Console.WriteLine($"{kv.Key} already exists");
+                    continue;
+                }
             }
-            else
-            {
-                // Console.WriteLine($"{kv.Key} already exists");
-                continue;
-            }
+            var message = new HttpRequestMessage(HttpMethod.Get, kv.Value);
+            message.Headers.Add("Cookie", cookie);
+            var result = client.Send(message);
+            byte[] bytes = await result.Content.ReadAsByteArrayAsync();
+            File.WriteAllBytes(Path.Combine(datDir.FullName, Path.GetFileName(kv.Key)), bytes);
+            Console.WriteLine($"{kv.Key} downloaded");
         }
-        var message = new HttpRequestMessage(HttpMethod.Get, kv.Value);
-        message.Headers.Add("Cookie", cookie);
-        var result = client.Send(message);
-        byte[] bytes = await result.Content.ReadAsByteArrayAsync();
-        File.WriteAllBytes(Path.Combine(datDir.FullName, Path.GetFileName(kv.Key)), bytes);
-        Console.WriteLine($"{kv.Key} downloaded");
+        catch (Exception ex)
+        {
+            Console.WriteLine($"{kv.Key} download failed, add to retry queue, exception : {ex}");
+            fileQueue.Enqueue(kv);
+        }
     }
 }
 
